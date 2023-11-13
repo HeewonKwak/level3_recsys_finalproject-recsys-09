@@ -6,6 +6,8 @@ from models.prediction import (
     ModelInput
 )
 
+import time
+
 router = APIRouter()
 
 
@@ -26,8 +28,13 @@ async def model_recommend(data_input: ModelInput):
     if not data_input:
         raise HTTPException(status_code=404, detail="'data_input' argument invalid!")
     try:
+        start_time = time.time()
         recommendations = get_recommendations(data_input)
-        print(recommendations)
+        end_time = time.time()
+
+        elapsed_time = end_time - start_time
+
+        print(f"실행 시간: {elapsed_time:.4f} 초")
 
     except Exception as err:
         raise HTTPException(status_code=500, detail=f"Exception: {err}")

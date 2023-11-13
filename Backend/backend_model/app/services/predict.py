@@ -47,6 +47,45 @@ class HybridModel():
         final_id = filter(df_extracted, self.age, self.platform, self.players, self.major_genre, 'cf')
         return list(final_id)[:10]
     
+class HybridModel_Modify():
+    def __init__(self):
+        self.initialize_data()
+        self.preprocess()
+    
+    def initialize_data(self):
+        self.game_table = load_data_from_redis('game')
+        self.model_table = load_data_from_redis('Ease')
+        self.user_table = load_data_from_redis('cf_model')
+    
+    def preprocess(self):
+        # model_table preprocess
+        # user_idx로 묶어서 id를 배열로 합치기
+        self.user_table = self.user_table.groupby('user_idx')['id'].apply(list).reset_index()
+        self.user_table["id"] = self.user_table["id"].apply(lambda x: np.array(x, dtype=int))
+        
+    def predict(self, user_data):
+        self.user_games_id = user_data.games
+        self.age = int(user_data.age)
+        self.platform = user_data.platform
+        self.players = int(user_data.players)
+        self.major_genre = user_data.major_genre
+        self.tag = tag_preprocessing(user_data.tag)
+
+        if not self.user_games_id:
+            return []
+        
+        self.user_table['similarity'] = self.user_table['id'].apply(lambda x: game_similarity(x, self.user_games_id))
+
+        similarity_df = self.user_table[self.user_table['similarity'] == max(self.user_table['similarity'])]
+        similarity_df = self.model_table[self.model_table['user'].isin(select_similar_user_idx(similarity_df))]
+
+        df_extracted = self.game_table[self.game_table['id'].isin(list(similarity_df['item']))]
+        df_extracted = df_extracted.set_index('id')
+        df_extracted = df_extracted.loc[list(similarity_df['item'])]
+        df_extracted = df_extracted.reset_index()
+
+        final_id = filter(df_extracted, self.age, self.platform, self.players, self.major_genre, 'cf')
+        return list(final_id)[:10]
 
 class Most_popular_filter():
     def __init__(self, user_data):

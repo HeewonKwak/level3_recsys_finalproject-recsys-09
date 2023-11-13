@@ -7,13 +7,21 @@ import pandas as pd
 redis_client = DirectRedis(host=MODEL_IP, port=REDIS_PORT)
 
 def redis_use():
-    # Create a sample DataFrame
-    engine = create_engine(POSTGRE)
-    game_table = pd.read_sql_table(table_name="game", con=engine)
-    cb_model_table = pd.read_sql_table(table_name="cb_model", con=engine)
-    Ease_table = pd.read_sql_table(table_name="Ease", con=engine)
-    cf_table = pd.read_sql_table(table_name="cf_model", con=engine)
-    details_table = pd.read_sql_table(table_name="details", con=engine)
+    if POSTGRE == 'False':
+        # read csv file
+        game_table = pd.read_csv('data/game.csv', encoding='cp949')
+        cb_model_table = pd.read_csv('data/cb_model.csv')
+        Ease_table = pd.read_csv('data/Ease.csv')
+        cf_table = pd.read_csv('data/cf_model.csv')
+        details_table = pd.read_csv('data/details.csv')
+    else:
+        # Create a sample DataFrame
+        engine = create_engine(POSTGRE)
+        game_table = pd.read_sql_table(table_name="game", con=engine)
+        cb_model_table = pd.read_sql_table(table_name="cb_model", con=engine)
+        Ease_table = pd.read_sql_table(table_name="Ease", con=engine)
+        cf_table = pd.read_sql_table(table_name="cf_model", con=engine)
+        details_table = pd.read_sql_table(table_name="details", con=engine)
 
     # Store DataFrame data in Redis with a key (e.g., 'df_cache')
     redis_client.set('game', game_table)
